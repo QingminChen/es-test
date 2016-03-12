@@ -3,6 +3,7 @@ package com.qingmin.test.elasticsearch;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
@@ -42,7 +43,7 @@ import org.junit.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class ESTest {  //method description by hot key is ATL+SHIFT+J   这里面所有的get（）方法相当于scala里面的collect，执行的意思
+public class ESTestChenqingmintest {  //method description by hot key is ATL+SHIFT+J   这里面所有的get（）方法相当于scala里面的collect，执行的意思
 
 //	public static void main(String[] args){
 //		
@@ -258,7 +259,7 @@ public class ESTest {  //method description by hot key is ATL+SHIFT+J   这里�
 		String id = "8";
 		//DeleteResponse response = transportClient.prepareDelete(index, type, id).get();
 		
-		//下面这个明天看一下
+		//下面这个明天看一下  这里可以指定索引库删除，也就是相当于删除索引库，这个方法还没有尝试成功
 		DeleteByQueryRequestBuilder qb = transportClient.prepareDeleteByQuery(index).setTypes(type);
 		qb.setQuery(QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(), FilterBuilders.idsFilter(id)));
 		DeleteByQueryResponse response = transportClient.deleteByQuery(qb.request()).actionGet();
@@ -349,7 +350,7 @@ public class ESTest {  //method description by hot key is ATL+SHIFT+J   这里�
 	 * @highlight
 	 */
 	@Test
-	public void test16() throws Exception{//一定要注意数字类型是字符串还是int，否则排序排不出来
+	public void test17() throws Exception{//一定要注意数字类型是字符串还是int，否则排序排不出来
 		SearchResponse searchResponse = transportClient.prepareSearch(index)
 		.setTypes(type)
 		.setQuery(QueryBuilders.matchQuery("city", "urumqi"))
@@ -378,5 +379,14 @@ public class ESTest {  //method description by hot key is ATL+SHIFT+J   这里�
 			System.out.println("test15 response searchHit:"+searchHit.getSourceAsString());
 		}
 
+	}
+	
+	/**
+	 * @删除 索引库
+	 * 
+	 */
+	@Test
+	public void test16() throws Exception{//这里是删除指定索引库，慎用！就不测试了，我还需要这些数据
+		DeleteIndexResponse response = transportClient.admin().indices().prepareDelete(index).get();
 	}
 }
