@@ -1,6 +1,7 @@
 package com.qingmin.test.elasticsearch;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -14,6 +15,7 @@ import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
 
@@ -24,6 +26,7 @@ import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.collect.ImmutableList;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -31,6 +34,8 @@ import org.elasticsearch.index.query.FilterBuilders;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.highlight.HighlightField;
+import org.elasticsearch.search.sort.SortOrder;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -164,7 +169,7 @@ public class ESTest {  //method description by hot key is ATL+SHIFT+J   这里�
 		XContentBuilder xcontentbuilder = XContentFactory.jsonBuilder().startObject()
 				.field("date", "07")
 				.field("city", "tianjing")
-				.field("temp", "2")
+				.field("temp","2")
 				.field("date", "07")
 				.field("weather", "foggy")
 				.endObject();//这里似乎这个startObject相当于json字符串外面那个大括号
@@ -309,23 +314,67 @@ public class ESTest {  //method description by hot key is ATL+SHIFT+J   这里�
 	/**
 	 * query by other fields
 	 * Pagination of results can be done by using the from and size parameters. The from parameter defines the offset from the first result you want to fetch. The size parameter allows you to configure the maximum amount of hits to be returned.
+	 * gt大于
+	 * gte大于等于
+	 * lt小于
+	 * lte小于等于
+	 * 
+	 * 
 	 */
-	@Test
-	public void test15() throws Exception{
+	@Ignore
+	public void test15() throws Exception{//一定要注意数字类型是字符串还是int，否则排序排不出来
 		SearchResponse searchResponse = transportClient.prepareSearch(index)
 		.setTypes(type)
-		.setQuery(QueryBuilders.matchQuery("city", "urumqi"))
+		.setSearchType(SearchType.DFS_QUERY_THEN_FETCH)//这个是默认查询方式
+		.addSort("city", SortOrder.ASC)//这个根据某一个字段排序
+		//.setPostFilter(FilterBuilders.rangeFilter("city").from("a").to("m"))//这种过滤头和尾都包含了闭区间
+		.setPostFilter(FilterBuilders.rangeFilter("city").gte("bf").lte("urumqi"))//这里的字符串比较有个问题什么叫大于，就是bf是大于beijing的，因为f大于e
+		//.setQuery(QueryBuilders.matchQuery("city", "urumqi"))
 		.setFrom(0)//这里的from代表的就是从查询的结果列表中从默认从角标为0的开始要，因为我们查询后符合条件的数据每次总有一天，所以只能从0开始才有数据，写1的话就没数据了
-		.setSize(0)//这里的from代表的就是从查询的结果列表中从默认取10条，类似于limit 10的功能
+		//.setSize()//这里的from代表的就是从查询的结果列表中从默认取10条，类似于limit 10的功能
 		.setExplain(true)//查询的结果跟搜索关键字越相似的来排序
 		.get();
-		
 		SearchHits hits = searchResponse.getHits();  //这里返回的是一个接口，而非一个对象，还不能理解或者直接按照一个对象列表来用，这个就是符合查询条件（这个条件仅仅是查询结果之前的条件）的数据
 		long totalHits = hits.getTotalHits();
 		System.out.println("test15 response totalHits:"+totalHits);
 		
 		SearchHit[] hits2 = hits.getHits();//The hits of the search request (based on the search type, and from / size provided).  这个就是符合查询条件，并且符合查询结果的筛选条件的数据，所以就会出现符合查询条件的是1条，但是筛选完之后肯那个是0条
 		for(SearchHit searchHit : hits2){
+			System.out.println("test15 response searchHit:"+searchHit.getSourceAsString());
+		}
+
+	}
+	
+	/**
+	 * @highlight
+	 */
+	@Test
+	public void test16() throws Exception{//一定要注意数字类型是字符串还是int，否则排序排不出来
+		SearchResponse searchResponse = transportClient.prepareSearch(index)
+		.setTypes(type)
+		.setQuery(QueryBuilders.matchQuery("city", "urumqi"))
+		.addHighlightedField("city")
+		.setHighlighterPreTags("<font color = 'red'>")
+		.setHighlighterPostTags("</font>")
+		//以上做完高亮集合数据结果集hi分开的，相当于看不到高亮的效果，需要自己弄在一起显示
+		.setFrom(0)//这里的from代表的就是从查询的结果列表中从默认从角标为0的开始要，因为我们查询后符合条件的数据每次总有一天，所以只能从0开始才有数据，写1的话就没数据了
+		//.setSize()//这里的from代表的就是从查询的结果列表中从默认取10条，类似于limit 10的功能
+		.setExplain(true)//查询的结果跟搜索关键字越相似的来排序
+		.get();
+		SearchHits hits = searchResponse.getHits();  //这里返回的是一个接口，而非一个对象，还不能理解或者直接按照一个对象列表来用，这个就是符合查询条件（这个条件仅仅是查询结果之前的条件）的数据
+		long totalHits = hits.getTotalHits();
+		System.out.println("test15 response totalHits:"+totalHits);
+		
+		SearchHit[] hits2 = hits.getHits();//The hits of the search request (based on the search type, and from / size provided).  这个就是符合查询条件，并且符合查询结果的筛选条件的数据，所以就会出现符合查询条件的是1条，但是筛选完之后肯那个是0条
+		for(SearchHit searchHit : hits2){
+			//获取高亮内容
+			Map<String,HighlightField> highlightFields = searchHit.getHighlightFields();
+			//根据高亮字段获取内容
+			HighlightField highlightField = highlightFields.get("city");
+			Text[] fragments = highlightField.getFragments();
+			for(Text text:fragments){
+				System.out.println("test15 response text:"+text);
+			}
 			System.out.println("test15 response searchHit:"+searchHit.getSourceAsString());
 		}
 
