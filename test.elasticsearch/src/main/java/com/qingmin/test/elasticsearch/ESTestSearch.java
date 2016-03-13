@@ -1,5 +1,6 @@
 package com.qingmin.test.elasticsearch;
 
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
@@ -9,6 +10,7 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.query.FilterBuilders;
+import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.sort.SortOrder;
@@ -35,8 +37,8 @@ public class ESTestSearch {
 	 */
 	@Ignore
 	public void test1() throws Exception{//这里是删除指定索引库，慎用！就不测试了，我还需要这些数据
-		//DeleteIndexResponse response = transportClient.admin().indices().prepareDelete("testsettings").get();
-		DeleteResponse response = transportClient.prepareDelete(index, type, "5").get();//删除一条数据
+		DeleteIndexResponse response = transportClient.admin().indices().prepareDelete("artical").get();
+		//DeleteResponse response = transportClient.prepareDelete(index, type, "5").get();//删除一条数据
 	}
 	
 	/**
@@ -103,6 +105,62 @@ public class ESTestSearch {
 		IndexResponse response = transportClient.prepareIndex(index, type ,"8").setRouting("test").setSource(builder).get();//這裡可以通過源碼hash方法測試算得test的hash值是2
 		System.out.println(response.getVersion());
 		
+	}
+	
+	/**
+	 * @自定義格式
+	 */
+	@Ignore
+	public void test5() throws Exception{
+		
+		XContentBuilder builder = XContentFactory.jsonBuilder()
+				.startObject()
+				.field("name","lily")
+				.field("score",80)
+				.endObject();
+		IndexResponse response = transportClient.prepareIndex(index, type ,"8").setRouting("test").setSource(builder).get();//這裡可以通過源碼hash方法測試算得test的hash值是2
+		System.out.println(response.getVersion());
+		
+	}
+	
+	/**
+	 * @添加日期字段
+	 */
+	@Test
+	public void test6() throws Exception{
+		
+		XContentBuilder builder = XContentFactory.jsonBuilder()
+				.startObject()
+				.field("time","2016-03-13")
+				.endObject();
+		IndexResponse response = transportClient.prepareIndex("article","article-1" ,"3").setSource(builder).get();//這裡可以通過源碼hash方法測試算得test的hash值是2
+		System.out.println(response.getVersion());
+		
+	}
+	
+	/**
+	 * @查詢時間
+	 */
+	@Test
+	public void test7() throws Exception{
+		System.out.println("start:"+System.currentTimeMillis());
+		SearchResponse searchResponse = transportClient.prepareSearch("article")
+				.setTypes("article-1")
+				.setQuery(QueryBuilders.rangeQuery("time").from("2016-01-01").to("2016-03-14"))
+				.setFrom(0)
+				.setSize(10)
+				.setExplain(true)
+				.get();
+		
+		SearchHits hits = searchResponse.getHits();  //这里返回的是一个接口，而非一个对象，还不能理解或者直接按照一个对象列表来用，这个就是符合查询条件（这个条件仅仅是查询结果之前的条件）的数据
+		long totalHits = hits.getTotalHits();
+		System.out.println("test15 response totalHits:"+totalHits);
+		
+		SearchHit[] hits2 = hits.getHits();//The hits of the search request (based on the search type, and from / size provided).  这个就是符合查询条件，并且符合查询结果的筛选条件的数据，所以就会出现符合查询条件的是1条，但是筛选完之后肯那个是0条
+		for(SearchHit searchHit : hits2){
+			System.out.println("test15 response searchHit:"+searchHit.getSourceAsString());
+		}
+		System.out.println("end:"+System.currentTimeMillis());
 	}
 	
 }
