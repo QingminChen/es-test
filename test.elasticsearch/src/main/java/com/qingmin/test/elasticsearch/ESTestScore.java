@@ -7,14 +7,12 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequestBuilder;
 import org.elasticsearch.action.delete.DeleteResponse;
-import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
@@ -41,22 +39,22 @@ public class ESTestScore {
 		 * @删除 索引库
 		 * 
 		 */
-		@Test
-		public void test16() throws Exception{//这里是删除指定索引库，慎用！就不测试了，我还需要这些数据
-			DeleteIndexResponse response = transportClient.admin().indices().prepareDelete("testsettings").get();
-			//DeleteResponse response = transportClient.prepareDelete(index, type, "AVNq4kwz1s6VJN-92wRY").get();//删除一条数据
+		@Ignore
+		public void test1() throws Exception{//这里是删除指定索引库，慎用！就不测试了，我还需要这些数据
+			//DeleteIndexResponse response = transportClient.admin().indices().prepareDelete("testsettings").get();
+			DeleteResponse response = transportClient.prepareDelete(index, type, "w").get();//删除一条数据
 		}
 		
 		/**
 		 * @初始化数据就是 添加数据
 		 */
-		@Ignore
-		public void test1() throws Exception{
+		@Test
+		public void test2() throws Exception{
 			
 			XContentBuilder builder = XContentFactory.jsonBuilder()
 					.startObject()
-					.field("name","Test")
-					.field("score","34")
+					.field("name","haha")
+					.field("score",60)
 					.endObject();
 			IndexResponse response = transportClient.prepareIndex(index, type).setSource(builder).get();
 			System.out.println(response.getVersion());
@@ -67,7 +65,7 @@ public class ESTestScore {
 		 * @根据字段进行分组，统计分组字段的和，在这里也就是计算每个年龄总共多少人 相当于select count(*),age from table group by age
 		 */
 		@Ignore
-		public void test2() throws Exception{
+		public void test3() throws Exception{
 			
 			
 			SearchResponse response = transportClient.prepareSearch(index)
@@ -87,7 +85,7 @@ public class ESTestScore {
 		 * 默认情况下只能返回前10组 ,返回所有组就是size(0)
 		 */
 		@Ignore
-		public void test3() throws Exception{
+		public void test4() throws Exception{
 			SearchResponse response = transportClient.prepareSearch(index).setTypes(type)
 			                         .addAggregation(AggregationBuilders.terms("name_terms").field("name")
 			                         .size(0)//必须在分组字段后面设置，才是把所有的分组都查出来，不然不起效果
@@ -107,7 +105,7 @@ public class ESTestScore {
 		 * 
 		 */
 		@Ignore
-		public void test4() throws Exception{
+		public void test5() throws Exception{
 			SearchResponse response = transportClient.prepareSearch(index).setTypes(type)
 			                         .addAggregation(AggregationBuilders.terms("name_terms").field("name")
 			                         .size(0)//必须在分组字段后面设置，才是把所有的分组都查出来，不然不起效果
@@ -127,7 +125,7 @@ public class ESTestScore {
 		 * 
 		 */
 		@Ignore
-		public void test5() throws Exception{
+		public void test6() throws Exception{
 			HashMap<String,Object> settings = new HashMap<String,Object>();
 			settings.put("number_of_shards", 1);
 			settings.put("number_of_replicas", 1);
@@ -139,8 +137,8 @@ public class ESTestScore {
 		 * @对于已经存在的索引库对settings属性进行修改
 		 * 
 		 */
-		@Test
-		public void test6() throws Exception{
+		@Ignore
+		public void test7() throws Exception{
 			HashMap<String,Object> settings = new HashMap<String,Object>();
 			settings.put("number_of_replicas", 2);
 			UpdateSettingsRequestBuilder updateSettingsRequestBuilder = transportClient.admin().indices().prepareUpdateSettings("testsettings");
